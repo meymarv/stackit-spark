@@ -40,9 +40,9 @@ public class TripDataParser {
             tripData.setBirthYear(row.getString(13));
             tripData.setGender(row.getString(14));
             return tripData;
-        }).filter(tripData -> {
+        })/*.filter(tripData -> {
             DateValidatorUsingDateFormat validatorUsingDateFormat = new DateValidatorUsingDateFormat("yyyy-MM-dd HH:mm:ss.ssss");
             return validatorUsingDateFormat.isValid(tripData.getStartTime()) && validatorUsingDateFormat.isValid(tripData.getStopTime());
-        });
+        })*/;
     }
 }

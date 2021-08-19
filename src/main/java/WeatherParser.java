@@ -38,9 +38,9 @@ public class WeatherParser {
             weather.setState(row.getString(11));
             weather.setZipcode(row.getString(12));
             return weather;
-        }).filter(weather -> {
+        })/*.filter(weather -> {
             DateValidatorUsingDateFormat validatorUsingDateFormat = new DateValidatorUsingDateFormat("yyyy-MM-dd HH:mm:ss");
             return validatorUsingDateFormat.isValid(weather.getStartTime()) && validatorUsingDateFormat.isValid(weather.getEndTime());
-        });
+        })*/;
     }
 }

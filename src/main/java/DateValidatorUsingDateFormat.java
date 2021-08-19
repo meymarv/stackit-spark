@@ -3,25 +3,30 @@ import interfaces.DateValidator;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class DateValidatorUsingDateFormat implements DateValidator {
-    private final String dateFormat;
+    private final DateFormat dateFormat;
 
     public DateValidatorUsingDateFormat(String dateFormat) {
-        this.dateFormat = dateFormat;
+        this.dateFormat = new SimpleDateFormat(dateFormat);
+        this.dateFormat.setLenient(false); // make the format check NOT LENIENT, which means it has to be an EXACT match
     }
 
     @Override
     public boolean isValid(String dateString) {
-        DateFormat dateFormat = new SimpleDateFormat(this.dateFormat);
-        dateFormat.setLenient(false); // make the format check NOT LENIENT, which means it has to be an EXACT match
         // Try parsing the dateString into a date based on the given format
         // if it throws an exception we return false, if it doesn't throw an exception we return true
         try {
-            dateFormat.parse(dateString);
+            this.dateFormat.parse(dateString);
         } catch (ParseException exception) {
             return false;
         }
         return true;
+    }
+
+    public static boolean isSameDay(String date1, String date2) {
+        DateFormat dayFormat = new SimpleDateFormat("yyyyMMdd");
+        return dayFormat.format(date1).equals(dayFormat.format(date2));
     }
 }
