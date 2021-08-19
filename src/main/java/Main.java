@@ -25,6 +25,6 @@ public class Main {
 
 
         Dataset<Row> rowDataset = spark.sql("SELECT * FROM tripdata WHERE gender = '2'");
-        rowDataset.show(false);
+        rowDataset.show(true);
     }
 }
