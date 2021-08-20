@@ -38,7 +38,7 @@ public class Main {
                 tripDataDf.col("userType"),
                 tripDataDf.col("startTime").alias("tripStartTime"),
                 tripDataDf.col("stopTime").alias("tripStopTime"),
-                date_format(tripDataDf.col("startTime"), "hh").alias("tripHourOfDay"),
+                date_format(tripDataDf.col("startTime"), "HH").alias("tripHourOfDay"),
                 dayofmonth(tripDataDf.col("startTime")).alias("tripDayOfMonth"),
                 weatherDf.col("eventId"),
                 weatherDf.col("type"),
@@ -48,10 +48,22 @@ public class Main {
         prettyPrintJoined.show();
         // Group the pretty result by dayOfMonth
         RelationalGroupedDataset groupedByDayofMonth = prettyPrintJoined.groupBy("tripDayOfMonth");
-        // Count the amount of trips per Day and then sort the in ascending order
+        // Count the amount of trips per Day and then sort in ascending order
         Dataset<Row> groupedByDayOfMonthAndSorted = groupedByDayofMonth.count().orderBy(prettyPrintJoined.col("tripDayOfMonth").asc());
-        // Show the result for the amounf of trips per day of the month
+        // Show the result for the amount of trips per day of the month
         groupedByDayOfMonthAndSorted.show();
+
+        // Group the pretty result by hourOfDay so we can figure out which time of the day has the most bike trips
+        RelationalGroupedDataset groupedByHourOfDay = prettyPrintJoined.groupBy("tripHourOfDay");
+        // Count the amount of trips per hour and then sort them based on hourOfDay in ascending order
+        Dataset<Row> groupedByHourOfDayAndSorted = groupedByHourOfDay.count().orderBy(prettyPrintJoined.col("tripHourOfDay").asc());
+
+        // Count the amount of trips per hour and then sort them based on count in ascending order
+        Dataset<Row> groupedByHourOfDayCount = groupedByHourOfDay.count();
+        Dataset<Row> groupedByHourOfDayAndCountSorted = groupedByHourOfDayCount.orderBy(groupedByHourOfDayCount.col("count").desc());
+        // Show the result for the amount of trips per hour of the day
+        groupedByHourOfDayAndSorted.show();
+        groupedByHourOfDayAndCountSorted.show(); // Display most bike trips per hour of Day
 
         // Query the average tripduration in seconds
         Dataset<Row> averageTripduration = tripDataDf.select(avg(tripDataDf.col("tripduration")));
