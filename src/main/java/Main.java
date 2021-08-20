@@ -77,11 +77,12 @@ public class Main {
 
         // Query the average tripduration in seconds BASED on usertype
         // Usertype: "Customer" = 24hr pass or 3day pass, "Subscriber" = annual member
-        // Dataset<Row> averageTripDurationByUsertype = spark.sql("SELECT avg(tripduration) averageTripduration, usertype FROM tripdata GROUP BY usertype");
-        // averageTripDurationByUsertype.show();
+        RelationalGroupedDataset tripdurationByUserType = tripDataDf.select(tripDataDf.col("tripduration").cast("integer"), tripDataDf.col("usertype")).groupBy(tripDataDf.col("usertype"));
+        Dataset<Row> avgTripdurationByUserType = tripdurationByUserType.avg("tripduration");
+        avgTripdurationByUserType.show();
 
         // Query which gender is the most common to have a bike subscription
-        // Dataset<Row> usertypeBasedOnGender = spark.sql("SELECT usertype, count(gender) as genderCounter, gender FROM tripdata GROUP BY usertype, gender");
-        // usertypeBasedOnGender.show();
+        Dataset<Row> usertypeBasedOnGender = spark.sql("SELECT usertype, count(gender) as genderCounter, gender FROM tripdata GROUP BY usertype, gender ORDER BY gender ASC");
+        usertypeBasedOnGender.show();
     }
 }
