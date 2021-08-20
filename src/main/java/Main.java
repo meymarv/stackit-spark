@@ -4,6 +4,8 @@ import org.apache.spark.sql.*;
 import tripdata.TripData;
 import weather.Weather;
 
+import static org.apache.spark.sql.functions.*;
+
 public class Main {
     public static void main(String[] args) {
         SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("STACKIT-Spark");
@@ -23,27 +25,51 @@ public class Main {
         Dataset<Row> tripDataDf = spark.createDataFrame(tripDataJavaRDD, TripData.class);
         tripDataDf.createOrReplaceTempView("tripdata");
 
-        // try to query the weather data for every trip where the trip start and stop time is between weather start and end time
-        // Sadly the weather data wasn't detailed enough so we can only find 1 dataset where the timestamps are within range of eachother
-        Dataset<Row> df = spark.sql("SELECT trip.tripduration, trip.starttime, trip.stoptime, trip.startstationname, trip.endstationname, weather.type, weather.severity FROM tripdata as trip JOIN weather as weather ON (to_timestamp(cast(trip.starttime as String), 'yyyy-MM-dd HH:mm:ss') > to_timestamp(cast(weather.starttime as String), 'yyyy-MM-dd HH:mm:ss') AND to_timestamp(cast(trip.starttime as String), 'yyyy-MM-dd HH:mm:ss') < to_timestamp(cast(weather.endtime as String), 'yyyy-MM-dd HH:mm:ss')) AND ((to_timestamp(cast(trip.stoptime as String), 'yyyy-MM-dd HH:mm:ss') > to_timestamp(cast(weather.starttime as String), 'yyyy-MM-dd HH:mm:ss') AND to_timestamp(cast(trip.stoptime as String), 'yyyy-MM-dd HH:mm:ss') < to_timestamp(cast(weather.endtime as String), 'yyyy-MM-dd HH:mm:ss'))) ORDER BY trip.starttime");
-        df.show();
+        // Join tripData and weather if tripData finds a weather dataset
+        Dataset<Row> joined = tripDataDf.join(weatherDf, (tripDataDf.col("starttime").between(weatherDf.col("starttime"), weatherDf.col("endtime")).and(tripDataDf.col("stoptime").between(weatherDf.col("starttime"), weatherDf.col("endtime")))));
+        // Prettify the joined dataset for later use and better visualisation
+        Dataset<Row> prettyPrintJoined = joined.select(
+                tripDataDf.col("bikeId"),
+                tripDataDf.col("tripDuration"),
+                tripDataDf.col("birthYear"),
+                tripDataDf.col("gender"),
+                tripDataDf.col("startStationName"),
+                tripDataDf.col("endStationName"),
+                tripDataDf.col("userType"),
+                tripDataDf.col("startTime").alias("tripStartTime"),
+                tripDataDf.col("stopTime").alias("tripStopTime"),
+                date_format(tripDataDf.col("startTime"), "hh").alias("tripHourOfDay"),
+                dayofmonth(tripDataDf.col("startTime")).alias("tripDayOfMonth"),
+                weatherDf.col("eventId"),
+                weatherDf.col("type"),
+                weatherDf.col("severity")
+        );
+        // Show the pretty result
+        prettyPrintJoined.show();
+        // Group the pretty result by dayOfMonth
+        RelationalGroupedDataset groupedByDayofMonth = prettyPrintJoined.groupBy("tripDayOfMonth");
+        // Count the amount of trips per Day and then sort the in ascending order
+        Dataset<Row> groupedByDayOfMonthAndSorted = groupedByDayofMonth.count().orderBy(prettyPrintJoined.col("tripDayOfMonth").asc());
+        // Show the result for the amounf of trips per day of the month
+        groupedByDayOfMonthAndSorted.show();
 
         // Query the average tripduration in seconds
-        Dataset<Row> averageTripDuration = spark.sql("SELECT avg(tripduration) as averageTripduration FROM tripdata");
-        averageTripDuration.show();
+        Dataset<Row> averageTripduration = tripDataDf.select(avg(tripDataDf.col("tripduration")));
+        averageTripduration.show();
 
         // Query the average tripduration in seconds BASED on gender
         // Gender: 0 = unknown, 1 = male, 2 = female
-        Dataset<Row> averageTripDurationByGender = spark.sql("SELECT avg(tripduration) averageTripduration, gender FROM tripdata GROUP BY gender");
-        averageTripDurationByGender.show();
+        RelationalGroupedDataset tripdurationByGender = tripDataDf.select(tripDataDf.col("tripduration").cast("integer"), tripDataDf.col("gender")).groupBy(tripDataDf.col("gender"));
+        Dataset<Row> avgTripdurationByGender = tripdurationByGender.avg("tripduration");
+        avgTripdurationByGender.show();
 
         // Query the average tripduration in seconds BASED on usertype
         // Usertype: "Customer" = 24hr pass or 3day pass, "Subscriber" = annual member
-        Dataset<Row> averageTripDurationByUsertype = spark.sql("SELECT avg(tripduration) averageTripduration, usertype FROM tripdata GROUP BY usertype");
-        averageTripDurationByUsertype.show();
+        // Dataset<Row> averageTripDurationByUsertype = spark.sql("SELECT avg(tripduration) averageTripduration, usertype FROM tripdata GROUP BY usertype");
+        // averageTripDurationByUsertype.show();
 
         // Query which gender is the most common to have a bike subscription
-        Dataset<Row> usertypeBasedOnGender = spark.sql("SELECT usertype, count(gender) as genderCounter, gender FROM tripdata GROUP BY usertype, gender");
-        usertypeBasedOnGender.show();
+        // Dataset<Row> usertypeBasedOnGender = spark.sql("SELECT usertype, count(gender) as genderCounter, gender FROM tripdata GROUP BY usertype, gender");
+        // usertypeBasedOnGender.show();
     }
 }
