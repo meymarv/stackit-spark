@@ -5,7 +5,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import tripdata.TripData;
 
-
 public class TripDataParser {
     private final SparkSession sparkSession;
     private final String pathToFile;
@@ -40,9 +39,10 @@ public class TripDataParser {
             tripData.setBirthYear(row.getString(13));
             tripData.setGender(row.getString(14));
             return tripData;
-        })/*.filter(tripData -> {
-            DateValidatorUsingDateFormat validatorUsingDateFormat = new DateValidatorUsingDateFormat("yyyy-MM-dd HH:mm:ss.ssss");
+        }).filter(tripData -> {
+            // Check if the date matches a specific format, ignore milliseconds because tripdata.csv has 4 millisecond spots even the 4th spot doesn't make sense
+            DateValidatorUsingDateFormat validatorUsingDateFormat = new DateValidatorUsingDateFormat("yyyy-MM-dd HH:mm:ss");
             return validatorUsingDateFormat.isValid(tripData.getStartTime()) && validatorUsingDateFormat.isValid(tripData.getStopTime());
-        })*/;
+        });
     }
 }

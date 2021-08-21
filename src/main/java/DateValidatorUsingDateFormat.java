@@ -3,7 +3,6 @@ import interfaces.DateValidator;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class DateValidatorUsingDateFormat implements DateValidator {
     private final DateFormat dateFormat;
@@ -23,10 +22,5 @@ public class DateValidatorUsingDateFormat implements DateValidator {
             return false;
         }
         return true;
-    }
-
-    public static boolean isSameDay(String date1, String date2) {
-        DateFormat dayFormat = new SimpleDateFormat("yyyyMMdd");
-        return dayFormat.format(date1).equals(dayFormat.format(date2));
     }
 }

@@ -3,7 +3,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.StructType;
 import weather.Weather;
 
 public class WeatherParser {
@@ -38,9 +37,9 @@ public class WeatherParser {
             weather.setState(row.getString(11));
             weather.setZipcode(row.getString(12));
             return weather;
-        })/*.filter(weather -> {
+        }).filter(weather -> {
             DateValidatorUsingDateFormat validatorUsingDateFormat = new DateValidatorUsingDateFormat("yyyy-MM-dd HH:mm:ss");
             return validatorUsingDateFormat.isValid(weather.getStartTime()) && validatorUsingDateFormat.isValid(weather.getEndTime());
-        })*/;
+        });
     }
 }

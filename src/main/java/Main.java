@@ -8,12 +8,18 @@ import static org.apache.spark.sql.functions.*;
 
 public class Main {
     public static void main(String[] args) {
+        // Set "setMaster" to "local" if you want to run it locally on your hardware
+        // Set "setMaster" to "spark://domain:port" if you want to run it distributed on spark cluster
         SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("STACKIT-Spark");
         SparkSession spark = SparkSession.builder().config(sparkConf).getOrCreate();
         spark.sparkContext().setLogLevel("error");
 
-        WeatherParser weatherParser = new WeatherParser(spark, "src/main/resources/weather.csv");
-        TripDataParser tripDataParser = new TripDataParser(spark, "src/main/resources/tripdata.csv");
+        // Set pathToFile to local file (e.g. "src/main/resources/weather.csv") if you don't want to use HDFS
+        // Add hdp domain IP after "hdfs://" if you want it with specific domain settings
+        WeatherParser weatherParser = new WeatherParser(spark, "hdfs:///tmp/weather.csv");
+        // Set pathToFile to local file (e.g. "src/main/resources/tripdata.csv") if you don't want to use HDFS
+        // Add hdp domain IP after "hdfs://" if you want it with specific domain settings
+        TripDataParser tripDataParser = new TripDataParser(spark, "hdfs:///tmp/tripdata.csv");
 
         // Create javaRDD for weather data in weather.csv
         JavaRDD<Weather> weatherJavaRDD = weatherParser.createJavaRDD();
@@ -38,8 +44,8 @@ public class Main {
                 tripDataDf.col("userType"),
                 tripDataDf.col("startTime").alias("tripStartTime"),
                 tripDataDf.col("stopTime").alias("tripStopTime"),
-                date_format(tripDataDf.col("startTime"), "HH").alias("tripHourOfDay"),
-                dayofmonth(tripDataDf.col("startTime")).alias("tripDayOfMonth"),
+                date_format(tripDataDf.col("startTime"), "HH").alias("tripStartHourOfDay"),
+                dayofmonth(tripDataDf.col("startTime")).alias("tripStartDayOfMonth"),
                 weatherDf.col("eventId"),
                 weatherDf.col("type"),
                 weatherDf.col("severity")
@@ -47,16 +53,16 @@ public class Main {
         // Show the pretty result
         prettyPrintJoined.show();
         // Group the pretty result by dayOfMonth
-        RelationalGroupedDataset groupedByDayofMonth = prettyPrintJoined.groupBy("tripDayOfMonth");
+        RelationalGroupedDataset groupedByDayofMonth = prettyPrintJoined.groupBy("tripStartDayOfMonth");
         // Count the amount of trips per Day and then sort in ascending order
-        Dataset<Row> groupedByDayOfMonthAndSorted = groupedByDayofMonth.count().orderBy(prettyPrintJoined.col("tripDayOfMonth").asc());
+        Dataset<Row> groupedByDayOfMonthAndSorted = groupedByDayofMonth.count().orderBy(prettyPrintJoined.col("tripStartDayOfMonth").asc());
         // Show the result for the amount of trips per day of the month
         groupedByDayOfMonthAndSorted.show();
 
         // Group the pretty result by hourOfDay so we can figure out which time of the day has the most bike trips
-        RelationalGroupedDataset groupedByHourOfDay = prettyPrintJoined.groupBy("tripHourOfDay");
+        RelationalGroupedDataset groupedByHourOfDay = prettyPrintJoined.groupBy("tripStartHourOfDay");
         // Count the amount of trips per hour and then sort them based on hourOfDay in ascending order
-        Dataset<Row> groupedByHourOfDayAndSorted = groupedByHourOfDay.count().orderBy(prettyPrintJoined.col("tripHourOfDay").asc());
+        Dataset<Row> groupedByHourOfDayAndSorted = groupedByHourOfDay.count().orderBy(prettyPrintJoined.col("tripStartHourOfDay").asc());
 
         // Count the amount of trips per hour and then sort them based on count in ascending order
         Dataset<Row> groupedByHourOfDayCount = groupedByHourOfDay.count();
