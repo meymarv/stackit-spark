@@ -59,6 +59,12 @@ public class Main {
         // Show the result for the amount of trips per day of the month
         groupedByDayOfMonthAndSorted.show();
 
+        // Group the result by type and severity
+        RelationalGroupedDataset a = prettyPrintJoined.groupBy(prettyPrintJoined.col("type"), prettyPrintJoined.col("severity"));
+        // Count the amount of trips per type/severity
+        Dataset<Row> b = a.count().orderBy(prettyPrintJoined.col("type").asc());
+        b.show();
+
         // Group the pretty result by hourOfDay so we can figure out which time of the day has the most bike trips
         RelationalGroupedDataset groupedByHourOfDay = prettyPrintJoined.groupBy("tripStartHourOfDay");
         // Count the amount of trips per hour and then sort them based on hourOfDay in ascending order
